@@ -1,6 +1,6 @@
 # Veracode User Bulk Role Assign
 
-Uses the Veracode Identity API to add roles to users. Currently allows easy assignment of the Security Labs User role.
+Uses the Veracode Identity API to add roles to users. Currently allows easy assignment of the Security Labs User, Greenlight IDE User, or eLearning roles.
 
 ## Setup
 
@@ -35,6 +35,7 @@ Arguments supported include:
 
 * --all, -l : assigns the role to all users when this is set to TRUE
 * --userid, -u : specify a GUID for an individual user to set the role (optional)
+* --role, -r: specify which role to assign, one of SECLAB (Security Labs User, default), IDESCAN (Greenlight IDE User), ELEARN (eLearning) (optional)
 
 ## NOTE
 

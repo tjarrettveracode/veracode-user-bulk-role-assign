@@ -16,14 +16,14 @@ def creds_expire_days_warning():
         print('These API credentials expire ', creds['expiration_ts'])
 
 
-def updateUser(userinfo):
+def updateUser(userinfo,role):
     userguid = userinfo["user_id"]
 
     # API users don't have Security Labs access, and don't try to assign to users who already have the role
     if checkForAPIUser(userinfo):
         print("Skipping API user",userguid)
         return 0
-    if checkForRole(userinfo, "securityLabsUser"):
+    if checkForRole(userinfo, role):
         print("Skipping user",userguid,"as role is already present")
         return 0
 
@@ -42,7 +42,7 @@ def updateUser(userinfo):
             print("Cannot assign role to user",userguid,"as user has no assigned teams")
             return 0
 
-    roles = constructUserRoles(userinfo,"securityLabsUser")
+    roles = constructUserRoles(userinfo,role)
     updateduser = api.VeracodeAPI().update_user(userguid,roles)
     print("Updated user",userguid)
 
@@ -76,14 +76,26 @@ def checkForTeams(userdata):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='This script adds the Security Labs User role for existing users. It can operate on one user '
+        description='This script adds the specified User role for existing users. It can operate on one user '
                     'or all users in the account.')
     parser.add_argument('-u', '--user_id', required=False, help='User ID (GUID) to update. Ignored if --all is specified.')
-    parser.add_argument('-l', '--all', required=False, help='Set to TRUE to update all users.', default=False)
+    parser.add_argument('-l', '--all', required=False, help='Set to TRUE to update all users.', default="false")
+    parser.add_argument('-r', '--role', required=False, help='One of SECLAB (default), IDESCAN, ELEARN.', default='SECLAB')
     args = parser.parse_args()
 
     target_user = args.user_id
     all_users = args.all 
+    role = args.role
+
+    if args.role == 'SECLAB':
+        role = 'securityLabsUser'
+    elif args.role == 'IDESCAN':
+        role = 'greenlightideuser'
+    elif args.role == 'ELEARN':
+        role = 'extelearn'
+    else:
+        print("Role", role, "is not supported. Role must be one of SECLAB, IDESCAN, ELEARN.")
+        return 0
 
     logging.basicConfig(filename='vcbulkassign.log',
                         format='%(asctime)s - %(levelname)s - %(funcName)s - %(message)s',
@@ -95,7 +107,7 @@ def main():
 
     count=0
 
-    if all_users == "true":
+    if all_users.lower() == "true":
         data = api.VeracodeAPI().get_users()
         print("Reviewing",len(data),"total users...")
         for user in data:
@@ -107,14 +119,14 @@ def main():
 
             data2 = api.VeracodeAPI().get_user(userguid)
 
-            count += updateUser(data2)
+            count += updateUser(data2,role)
             next
     elif target_user is None:
         print("You must specify a --user_id (guid) if --all is not specified.")
         exit
     else:
         user = api.VeracodeAPI().get_user(target_user)
-        count += updateUser(user)
+        count += updateUser(user,role)
 
     print("Added role to",count,"users")
 

@@ -41,5 +41,5 @@ Arguments supported include:
 
 1. You should only assign the Security Labs role to the number of users for whom you have purchased seats.
 2. To be able to use all the endpoints of the Identity REST APIs, you must have either (a) an API service account with the Admin API role, or (b) auser account with the Administrator role, as described in the [Veracode Help Center](https://help.veracode.com/go/c_identity_intro)
-3. You cannot assign the Security Lead role to an API user. The script is smart enough to skip these users.
-4. The Veracode Platform expects a user with the Security Lead role to either be assigned to a team or to have another role that grants them privileges across teams (e.g. Security Lead). Currently the script will fail to assign the role, with a warning, to a user that does not meet these criteria.
+3. You cannot assign the Security Labs role to an API user. The script is smart enough to skip these users.
+4. The Veracode Platform expects a user with the Security Labs role to either be assigned to a team or to have another role that grants them privileges across teams (e.g. Security Lead). Currently the script will fail to assign the role, with a warning, to a user that does not meet these criteria.

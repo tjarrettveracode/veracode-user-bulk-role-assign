@@ -15,58 +15,56 @@ def creds_expire_days_warning():
         print('These API credentials expire ', creds['expiration_ts'])
 
 
-def updateUser(userinfo,role):
+def update_user(userinfo,role):
     userguid = userinfo["user_id"]
 
     # API users don't have Security Labs access, and don't try to assign to users who already have the role
-    if checkForAPIUser(userinfo):
+    if check_for_api_user(userinfo):
         print("Skipping API user",userguid)
         return 0
-    if checkForRole(userinfo, role):
+    if check_for_role(userinfo, role):
         print("Skipping user",userguid,"as role is already present")
         return 0
 
     ignoreteamrestrictions = 0
 
-    if checkForTeams(userinfo) == 0:
+    if check_for_teams(userinfo) == 0:
         #check to see if we have an Ignores Team Restrictions bit
-        if checkForRole(userinfo, "extseclead") == None:
-            ignoreteamrestrictions = 1
-        elif checkForRole(userinfo, "extexecutive") == None:
-            ignoreteamrestrictions = 1
-        elif checkForRole(userinfo, "extadmin") == None:
+        if ((check_for_role(userinfo, "extseclead") == None) 
+            or (check_for_role(userinfo,"extexecutive") == None))
+            or (check_for_role(userinfo,"extadmin") == None):
             ignoreteamrestrictions = 1
 
         if ignoreteamrestrictions == 0:
             print("Cannot assign role to user",userguid,"as user has no assigned teams")
             return 0
 
-    roles = constructUserRoles(userinfo,role)
-    updateduser = vapi().update_user(userguid,roles)
+    roles = construct_user_roles(userinfo,role)
+    vapi().update_user(userguid,roles)
     print("Updated user",userguid)
 
     return 1
 
-def constructUserRoles(userdata, roleToAdd):
+def construct_user_roles(userdata, role_to_add):
     roles = userdata["roles"]
     newroles = []
     for role in roles:
         newroles.append({"role_name": role.get("role_name")})
-    newroles.append({"role_name": roleToAdd}) #add roleToAdd to roles
+    newroles.append({"role_name": role_to_add}) #add roleToAdd to roles
 
-    rolesObject = json.dumps({"roles": newroles})
-    return rolesObject
+    roles_object = json.dumps({"roles": newroles})
+    return roles_object
 
-def checkForRole(userdata, roleToCheck):
+def check_for_role(userdata, role_to_check):
     roles = userdata["roles"]
-    return any(item for item in roles if item["role_name"] == roleToCheck)
+    return any(item for item in roles if item["role_name"] == role_to_check)
 
-def checkForAPIUser(userdata):
+def check_for_api_user(userdata):
     permissions = userdata.get("permissions")
     apiuser = any(item for item in permissions if item["permission_name"]=="apiUser")
     return apiuser
 
-def checkForTeams(userdata):
+def check_for_teams(userdata):
     teams = userdata.get("teams")
     if teams == None:
         return 0
@@ -118,14 +116,14 @@ def main():
 
             data2 = vapi().get_user(userguid)
 
-            count += updateUser(data2,role)
+            count += update_user(data2,role)
             next
     elif target_user is None:
         print("You must specify a --user_id (guid) if --all is not specified.")
         exit
     else:
         user = vapi().get_user(target_user)
-        count += updateUser(user,role)
+        count += update_user(user,role)
 
     print("Added role to",count,"users")
 

@@ -5,7 +5,17 @@ import logging
 import json
 import datetime
 
+import anticrlf
 from veracode_api_py import VeracodeAPI as vapi
+
+log = logging.getLogger(__name__)
+
+def setup_logger():
+    handler = logging.FileHandler('vcsandboxrc.log', encoding='utf8')
+    handler.setFormatter(anticrlf.LogFormatter('%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'))
+    logger = logging.getLogger(__name__)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
 def creds_expire_days_warning():
     creds = vapi().get_creds()
@@ -94,11 +104,6 @@ def main():
         print("Role", role, "is not supported. Role must be one of SECLAB, IDESCAN, ELEARN.")
         return 0
 
-    logging.basicConfig(filename='vcbulkassign.log',
-                        format='%(asctime)s - %(levelname)s - %(funcName)s - %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S%p',
-                        level=logging.INFO)
-
     # CHECK FOR CREDENTIALS EXPIRATION
     creds_expire_days_warning()
 
@@ -128,4 +133,5 @@ def main():
     print("Added role to",count,"users")
 
 if __name__ == '__main__':
+    setup_logger()
     main()

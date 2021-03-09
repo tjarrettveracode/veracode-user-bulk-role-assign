@@ -11,7 +11,7 @@ from veracode_api_py import VeracodeAPI as vapi
 log = logging.getLogger(__name__)
 
 def setup_logger():
-    handler = logging.FileHandler('vcsandboxrc.log', encoding='utf8')
+    handler = logging.FileHandler('vcbulkassign.log', encoding='utf8')
     handler.setFormatter(anticrlf.LogFormatter('%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'))
     logger = logging.getLogger(__name__)
     logger.addHandler(handler)
@@ -22,7 +22,7 @@ def creds_expire_days_warning():
     exp = datetime.datetime.strptime(creds['expiration_ts'], "%Y-%m-%dT%H:%M:%S.%f%z")
     delta = exp - datetime.datetime.now().astimezone() #we get a datetime with timezone...
     if (delta.days < 7):
-        print('These API credentials expire ', creds['expiration_ts'])
+        print('These API credentials expire {}'.format(creds['expiration_ts']))
 
 
 def update_user(userinfo,role):
@@ -30,10 +30,10 @@ def update_user(userinfo,role):
 
     # API users don't have Security Labs access, and don't try to assign to users who already have the role
     if check_for_api_user(userinfo):
-        print("Skipping API user",userguid)
+        print("Skipping API user {}".format(userguid))
         return 0
     if check_for_role(userinfo, role):
-        print("Skipping user",userguid,"as role is already present")
+        print("Skipping user {} as role is already present".format(userguid))
         return 0
 
     ignoreteamrestrictions = 0
@@ -41,17 +41,17 @@ def update_user(userinfo,role):
     if check_for_teams(userinfo) == 0:
         #check to see if we have an Ignores Team Restrictions bit
         if ((check_for_role(userinfo, "extseclead") == None) 
-            or (check_for_role(userinfo,"extexecutive") == None))
-            or (check_for_role(userinfo,"extadmin") == None):
+            or (check_for_role(userinfo,"extexecutive") == None)
+            or (check_for_role(userinfo,"extadmin") == None)):
             ignoreteamrestrictions = 1
 
         if ignoreteamrestrictions == 0:
-            print("Cannot assign role to user",userguid,"as user has no assigned teams")
+            print("Cannot assign role to user {} as user has no assigned teams".format(userguid))
             return 0
 
     roles = construct_user_roles(userinfo,role)
     vapi().update_user(userguid,roles)
-    print("Updated user",userguid)
+    print("Updated user {}".format(userguid))
 
     return 1
 
@@ -86,7 +86,7 @@ def main():
         description='This script adds the specified User role for existing users. It can operate on one user '
                     'or all users in the account.')
     parser.add_argument('-u', '--user_id', required=False, help='User ID (GUID) to update. Ignored if --all is specified.')
-    parser.add_argument('-l', '--all', required=False, help='Set to TRUE to update all users.', default="true")
+    parser.add_argument('-l', '--all', action='store_true', required=False, help='Set to TRUE to update all users.', default="true")
     parser.add_argument('-r', '--role', required=False, help='One of SECLAB (default), IDESCAN, ELEARN.', default='SECLAB')
     args = parser.parse_args()
 
@@ -101,7 +101,7 @@ def main():
     elif args.role == 'ELEARN':
         role = 'extelearn'
     else:
-        print("Role", role, "is not supported. Role must be one of SECLAB, IDESCAN, ELEARN.")
+        print("Role {} is not supported. Role must be one of SECLAB, IDESCAN, ELEARN.".format(role))
         return 0
 
     # CHECK FOR CREDENTIALS EXPIRATION
@@ -109,28 +109,27 @@ def main():
 
     count=0
 
-    if all_users.lower() == "true":
+    if all_users:
         data = vapi().get_users()
-        print("Reviewing",len(data),"total users...")
+        print("Reviewing {} total users...".format(len(data)))
         for user in data:
             userguid = user["user_id"]
             # skip deleted users
             if user["deleted"] == "true":
-                print("Skipping deleted user",userguid)
+                print("Skipping deleted user {}".userguid)
                 return 0
 
             data2 = vapi().get_user(userguid)
 
             count += update_user(data2,role)
-            next
     elif target_user is None:
         print("You must specify a --user_id (guid) if --all is not specified.")
-        exit
+        return
     else:
         user = vapi().get_user(target_user)
         count += update_user(user,role)
 
-    print("Added role to",count,"users")
+    print("Added role to {} users".format(count))
 
 if __name__ == '__main__':
     setup_logger()

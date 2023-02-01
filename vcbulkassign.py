@@ -63,7 +63,8 @@ def construct_user_roles(userdata, role_to_add):
     newroles.append({"role_name": role_to_add}) #add roleToAdd to roles
 
     roles_object = json.dumps({"roles": newroles})
-    return roles_object
+    newroles = json.loads(roles_object)
+    return newroles
 
 def check_for_role(userdata, role_to_check):
     roles = userdata["roles"]
@@ -104,6 +105,14 @@ def main():
         print("Role {} is not supported. Role must be one of SECLAB, IDESCAN, ELEARN.".format(role))
         return 0
 
+    # Check if we're updating only one user.
+    if target_user is not None:
+        if len(target_user)!=36:
+            print("Please make sure User ID is a GUID.")
+            return
+        else:
+            all_users = False
+
     # CHECK FOR CREDENTIALS EXPIRATION
     creds_expire_days_warning()
 
@@ -115,7 +124,7 @@ def main():
         for user in data:
             userguid = user["user_id"]
             # skip deleted users
-            if user["deleted"] == "true":
+            if "deleted" in user.keys() and user["deleted"] == "true":
                 print("Skipping deleted user {}".userguid)
                 return 0
 
@@ -126,7 +135,11 @@ def main():
         print("You must specify a --user_id (guid) if --all is not specified.")
         return
     else:
-        user = vapi().get_user(target_user)
+        try:
+            user = vapi().get_user(target_user)
+        except Exception as e:
+            print("Error trying to access that user. Please check the GUID and try again.")
+            return
         count += update_user(user,role)
 
     print("Added role to {} users".format(count))
